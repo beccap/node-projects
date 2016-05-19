@@ -1,5 +1,41 @@
-<h3>Hangman</h1>
+<!doctype html>
+<html>
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+    var socket = io();
 
-<h2>{{displayProgress}}</h3>
+    $(document).ready(function() {
+        $('#send').click(function() {
+            socket.emit('guess', $('#letter').val());
+            $('#letter').val(''); // clear letter value
+            return false;
+        });
 
-<p>Remaining guesses: {{remainingGuesses}}</p>
+        $('#undo').click(function() {
+            socket.emit('undo');
+            return false;
+        });
+    });
+</script>
+
+<head>
+    <title>Hangman</title>
+</head>
+
+<body>
+    <h3>Hangman</h1>
+
+    <h2>{{displayProgress}}</h3>
+
+    <p>Remaining guesses: {{remainingGuesses}}</p>
+
+    <form action="">
+         Enter letter:<br>
+         <input id="letter" type="text" name="letter" maxlength="1"><br><br>
+         <input id="send" type="button" value="Send">
+         <input id="undo" type="button" value="Undo">
+    </form>
+</body>
+</html>
+

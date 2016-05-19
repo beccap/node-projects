@@ -1,12 +1,25 @@
 var words = require('./lib/words.js');
 var state = require('./lib/state.js');
 
+// set up express
 var express = require('express');
-
 var app = express();
 
-// set up body-parser for POST requests
-app.use(require('body-parse').urlencoded({ extended: true }));
+// set up server
+var server = require('http').createServer(app);
+
+// set up socket io
+var io = require('socket.io')(server);
+
+io.on('connection', function(client) {
+    console.log('Client connected...');
+    client.on('guess', function(letter) {
+	console.log("guess: " + letter);
+    });
+    client.on('undo', function() {
+	console.log("undo");
+    });
+});
 
 // set up handlebars view engine
 var handlebars = require('express-handlebars')
@@ -14,16 +27,14 @@ var handlebars = require('express-handlebars')
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-// set port
-app.set('port', process.env.PORT || 8081);
-
 // variables
 var guessWord = words.getRandomWord(true); // get first word
 var progress  = words.initializeProgress(guessWord);
 var guessesLeft = 8;
 
 app.get('/', function(req, res) {
-	res.render('home', { displayProgress: words.displayProgress(progress), 
+	res.render('home', { layout: null,
+                             displayProgress: words.displayProgress(progress), 
                              remainingGuesses: guessesLeft });
     });
 
@@ -40,7 +51,7 @@ app.use(function(err, req, res, next) {
 	res.render('500');
     });
 
-app.listen(app.get('port'), function() {
-	console.log('Express started on http://localhost:' + app.get('port') +
-		    '; press Ctrl-C to terminate.');
+// set up port
+server.listen(8081, function() {
+	console.log('Express started on http://localhost: 8081; press Ctrl-C to terminate.');
     });

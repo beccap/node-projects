@@ -1,8 +1,12 @@
 var words = require('./lib/words.js');
+var state = require('./lib/state.js');
 
 var express = require('express');
 
 var app = express();
+
+// set up body-parser for POST requests
+app.use(require('body-parse').urlencoded({ extended: true }));
 
 // set up handlebars view engine
 var handlebars = require('express-handlebars')
@@ -10,6 +14,7 @@ var handlebars = require('express-handlebars')
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
+// set port
 app.set('port', process.env.PORT || 8081);
 
 // variables

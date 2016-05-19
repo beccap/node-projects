@@ -14,17 +14,26 @@ var dictionary = [
 var blank = "_";
 
 exports.getRandomWord = function(firstTime) {
+    if (dictionary.length <= 0) {
+	alert("No words left in dictionary!");
+	return null;
+    }
+
     var index = firstTime? 0: Math.floor(Math.random() * dictionary.length);
     console.log("getRandomWord: " + dictionary[index]);
+
+    // remove word from dictionary
+    dictionary.splice(index, 1);
+
+    console.log("dictionary: " + dictionary);
+
     return dictionary[index];
 };
 
 exports.initializeProgress = function(word) {
-    console.log("typeof(word): " + typeof(word));
     if (!word) {
 	return null;
     }
-    console.log("length: " + word.length);
     return blank.repeat(word.length);
 }
 

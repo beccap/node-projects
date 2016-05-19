@@ -2,13 +2,14 @@
   "name": "hangman",
   "version": "0.0.0",
   "description": "node.js hangman server",
-  "main": "index.js",
+  "main": "hangman.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Becca Perry",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.13.4"
+    "express": "^4.13.4",
+    "express-handlebars": "^3.0.0"
   }
 }

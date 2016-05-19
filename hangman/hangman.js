@@ -1,3 +1,5 @@
+var words = require('./lib/words.js');
+
 var express = require('express');
 
 var app = express();
@@ -8,12 +10,16 @@ var handlebars = require('express-handlebars')
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-app.set('port', process.env.PORT || 3000);
+app.set('port', process.env.PORT || 8081);
 
-app.use(express.static(__dirname + '/public'));
+// variables
+var guessWord = words.getRandomWord(true); // get first word
+var progress  = words.initializeProgress(guessWord);
+var guessesLeft = 8;
 
 app.get('/', function(req, res) {
-	res.render('home');
+	res.render('home', { displayProgress: words.displayProgress(progress), 
+                             remainingGuesses: guessesLeft });
     });
 
 // 404 catch-all handler (middleware)

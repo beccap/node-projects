@@ -1,5 +1,5 @@
-var words = require('./lib/words.js');
-var state = require('./lib/state.js');
+var GamePlay = require('./lib/gameplay.js').GamePlay;
+var game;
 
 // set up express
 var express = require('express');
@@ -13,11 +13,19 @@ var io = require('socket.io')(server);
 
 io.on('connection', function(client) {
     console.log('Client connected...');
+    if (game) {
+	var session = client.handshake.query.session || 0;
+	var start   = client.handshake.query.start || 0;
+	console.log('starting game play with session: ' + session + ' and start: ' + start);
+	game.startGamePlay(client, session, start);
+    }
     client.on('guess', function(letter) {
 	console.log("guess: " + letter);
+	game.makeGuess(letter);
     });
     client.on('undo', function() {
 	console.log("undo");
+	game.undo();
     });
 });
 
@@ -27,15 +35,9 @@ var handlebars = require('express-handlebars')
 app.engine('handlebars', handlebars.engine);
 app.set('view engine', 'handlebars');
 
-// variables
-var guessWord = words.getRandomWord(true); // get first word
-var progress  = words.initializeProgress(guessWord);
-var guessesLeft = 8;
-
+// render home page
 app.get('/', function(req, res) {
-	res.render('home', { layout: null,
-                             displayProgress: words.displayProgress(progress), 
-                             remainingGuesses: guessesLeft });
+	res.render('home', { layout: null });
     });
 
 // 404 catch-all handler (middleware)
@@ -54,4 +56,6 @@ app.use(function(err, req, res, next) {
 // set up port
 server.listen(8081, function() {
 	console.log('Express started on http://localhost: 8081; press Ctrl-C to terminate.');
+        // initialize game, but don't start yet
+	game = new GamePlay();
     });

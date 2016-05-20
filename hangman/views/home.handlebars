@@ -16,6 +16,21 @@
             socket.emit('undo');
             return false;
         });
+
+        socket.on('display-progress', function(progress) {
+            $('#displayProgress').text(progress);
+        });
+
+        socket.on('set-num-guesses', function(numGuesses) {
+            $('#numguesses').text(numGuesses);
+        });
+
+        socket.on('update-query', function(query) {
+            if (window.history.pushState) {
+                var newurl = window.location.origin + window.location.pathname + query;
+                window.history.pushState({ path: newurl }, '', newurl);
+            }
+        });
     });
 </script>
 
@@ -26,9 +41,9 @@
 <body>
     <h3>Hangman</h1>
 
-    <h2>{{displayProgress}}</h3>
+    <h2 id="displayprogress"></h3>
 
-    <p>Remaining guesses: {{remainingGuesses}}</p>
+    <p>Remaining guesses: <div id="numguesses">remainingGuesses</div></p>
 
     <form action="">
          Enter letter:<br>

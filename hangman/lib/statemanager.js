@@ -6,26 +6,24 @@ function StateManager() {
     this.sessionArray = []; // this will allow for multiple state sessions
     this.sessionArray.push([]);
     this.session = 0;
-    this.client = null;
 
-    this.logMakeGuess = function(letter, isCorrect) {
-	addState(this, "guess", letter, isCorrect);
+    this.logMakeGuess = function(client, letter, isCorrect) {
+	addState(this, client, "guess", letter, isCorrect);
     };
 
-    this.logStartNewWord = function(word, oldWord) {
-	addState(this, "newword", word, oldWord);
+    this.logStartNewWord = function(client, word, oldWord) {
+	addState(this, client, "newword", word, oldWord);
     };
 
-    this.logOutOfGuesses = function(word) {
-	addState(this, "outofguesses", word);
+    this.logOutOfGuesses = function(client, word) {
+	addState(this, client, "outofguesses", word);
     };
 
-    this.logSolved = function(word) {
-	addState(this, "solved", word);
+    this.logSolved = function(client, word) {
+	addState(this, client, "solved", word);
     };
 
     this.initializeSession = function(client, session, start) {
-	this.client = client;
 	this.session = session || 0;
 
 	var stateArray = this.sessionArray[session];
@@ -40,14 +38,16 @@ function StateManager() {
 	session = this.sessionArray.length - 1;
 
 	// emit an event to update URL
-	this.emitUpdateQuery();
+	this.emitUpdateQuery(client);
 
 	return true;
     };
 
     // update the state on undo
-    this.undo = function() {
-	return removeState(this);
+    this.undo = function(client) {
+	var state = removeState(this, client);
+	console.log("removing state: " + state);
+	return state;
     };
 
     // are we at the beginning?
@@ -62,13 +62,15 @@ function StateManager() {
 
     // creates a query string representing our current state
     this.createStateQuery = function() {
+	var stateArrayLength = this.sessionArray[this.session].length || 1;
 	return "?session=" + this.session + 
-               "&start=" + this.sessionArray[this.session].length - 1;
+	"&start=" + (stateArrayLength - 1);
     }
 
-    this.emitUpdateQuery = function() {
-	if (this.client) {
-	    this.client.emit('update-query', this.createStateQuery());
+    this.emitUpdateQuery = function(client) {
+	if (client) {
+            console.log("emitting state query: " + this.createStateQuery());
+	    client.emit('update-query', { query: this.createStateQuery() });
 	}
     }
 }
@@ -76,7 +78,7 @@ function StateManager() {
 // private functions
 
 // adds a new state to the current session
-function addState(stateManager, action, data1, data2) {
+function addState(stateManager, client, action, data1, data2) {
     if (!action) {
 	console.log("ERROR: invalid action passed to addState");
 	return false;
@@ -93,13 +95,13 @@ function addState(stateManager, action, data1, data2) {
     stateList.push(new State(action, data1, data2));
 
     // emit an event to update URL
-    stateManager.emitUpdateQuery();
+    stateManager.emitUpdateQuery(client);
 
     return true;
 } 
 
 // removes the last state from the session and returns the state that was removed
-function removeState(stateManager) {
+function removeState(stateManager, client) {
 
     // get current stateList based on session
     var stateList = stateManager.sessionArray[stateManager.session];
@@ -108,11 +110,13 @@ function removeState(stateManager) {
 	return false;
     }
 
+    var stateToRemove = (stateList.length > 0)? stateList.pop(): null;
+
     // emit an event to update URL
-    stateManager.emitUpdateQuery();
+    stateManager.emitUpdateQuery(client);
     
     // return the popped state
-    return (stateList.length > 0)? stateList.pop: null;
+    return stateToRemove;
 }
 
 exports.StateManager = StateManager;

@@ -21,11 +21,11 @@ io.on('connection', function(client) {
     }
     client.on('guess', function(letter) {
 	console.log("guess: " + letter);
-	game.makeGuess(letter);
+	game.makeGuess(client, letter);
     });
     client.on('undo', function() {
 	console.log("undo");
-	game.undo();
+	game.undo(client);
     });
 });
 

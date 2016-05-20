@@ -4,8 +4,8 @@
 <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
 <script>
     var socket = io();
-
     $(document).ready(function() {
+
         $('#send').click(function() {
             socket.emit('guess', $('#letter').val());
             $('#letter').val(''); // clear letter value
@@ -17,20 +17,25 @@
             return false;
         });
 
-        socket.on('display-progress', function(progress) {
-            $('#displayProgress').text(progress);
+        socket.on('display-progress', function(data) {
+            $("#displayprogress").text(data.progress);
         });
 
-        socket.on('set-num-guesses', function(numGuesses) {
-            $('#numguesses').text(numGuesses);
+        socket.on('set-num-guesses', function(data) {
+            $("#numguesses").text(data.numGuesses);
         });
 
-        socket.on('update-query', function(query) {
+        socket.on('update-query', function(data) {
             if (window.history.pushState) {
-                var newurl = window.location.origin + window.location.pathname + query;
+                var newurl = window.location.origin + window.location.pathname + data.query;
                 window.history.pushState({ path: newurl }, '', newurl);
             }
         });
+
+        socket.on('show-alert', function(data) {
+            alert(data.message);
+        });
+
     });
 </script>
 
@@ -43,7 +48,7 @@
 
     <h2 id="displayprogress"></h3>
 
-    <p>Remaining guesses: <div id="numguesses">remainingGuesses</div></p>
+    <p id="numguesses"></p>
 
     <form action="">
          Enter letter:<br>

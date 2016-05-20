@@ -5,7 +5,6 @@ var maxGuesses = 8;
 
 // intended to be a singleton
 function GamePlay() {
-    this.client = null;
     this.state = new StateManager();
     this.words = new Words();
     this.words.initialize(null);
@@ -13,97 +12,109 @@ function GamePlay() {
     this.guessesRemaining = 0;
 
     this.startGamePlay = function(client, session, start) {
-        this.client = client;
 	this.state.initializeSession(client, session, start);
 	this.words.initialize(this.state.getStateArray());
 	if (this.state.atBeginning()) {
-	    this.startNewWord();
+	    this.startNewWord(client);
 	}
     };
 
-    this.startNewWord = function() {
+    this.startNewWord = function(client) {
 	var newWorkingWord = this.words.getNewWord();
         this.guessesRemaining = maxGuesses;
-	this.state.logStartNewWord(newWorkingWord, this.workingWord);
+	this.state.logStartNewWord(client, newWorkingWord, this.workingWord);
 	this.workingWord = newWorkingWord;
 
 	// emit events to client, updating progress display and remaining guesses
-	this.emitDisplayProgress();
-	this.emitSetNumGuesses();
+	this.emitDisplayProgress(client);
+	this.emitSetNumGuesses(client);
     };
 
-    this.makeGuess = function(letter) {
+    this.makeGuess = function(client, letter) {
 
-	letter = letter.toUpper(); // force to upper case
+	letter = letter.toUpperCase(); // force to upper case
 
 	var letterFound = this.words.guessLetter(letter);
-	state.logMakeGuess(letter, letterFound);
+	this.state.logMakeGuess(client, letter, letterFound);
         if (letterFound) {
+	    // emit event to update progress display
+	    this.emitDisplayProgress(client);
 	    if (this.words.hasSolvedWord()) {
-		alert("You've guessed the word!");
-		state.logSolved(this.workingWord);
-		this.startNewWord();
-	    }
-	    else {
-	        // emit event to update progress display
-		this.emitDisplayProgress();
+		this.emitShowAlert(client, "You've guessed the word!");
+		this.state.logSolved(client, this.workingWord);
+		this.startNewWord(client);
 	    }
 	}
 	else {
+            // reduce the number of guesses remaining
 	    --this.guessesRemaining;
+
+	    // emit event to update remaining guesses
+	    this.emitSetNumGuesses(client);
+
 	    if (this.guessesRemaining <= 0) {
-		alert("All out of guesses! The word was: " + this.workingWord);
-		state.logOutOfGuesses(this.workingWord);
-		this.startNewWord();
+		this.emitShowAlert(client, "All out of guesses! The word was: " + this.workingWord);
+		this.state.logOutOfGuesses(client, this.workingWord);
+		this.startNewWord(client);
 	    }
 	    else {
-                alert("The letter " + letter + " is not in the word. You have " +
-		      this.guessesRemaining + " left.");
-	        // emit event to update remaining guesses
-		this.emitSetNumGuesses();
+                this.emitShowAlert(client, "The letter " + letter + " is not in the word. You have " +
+		      this.guessesRemaining + " guesses left.");
 	    }
 	}
     };
 
-    this.undo = function() {
+    this.undo = function(client) {
 
-	var lastState = this.state.undo();
+	var lastState = this.state.undo(client);
+	console.log("undoing lastState: " + lastState.action);
 
 	switch (lastState.action) {
 	    case "newword":
 		// add word back to dictionary
 		this.words.restoreWord(lastState.data1, lastState.data2);
-		this.workingWord = lastState.data2;
+		this.workingWord = this.words.currentWord;
 		
 		// emit display-progress event
-		this.emitDisplayProgress();
+		this.emitDisplayProgress(client);
 
 	    case "outofguesses":
 	    case "solved":
 		// also undo the change immediately before it since this is not a user-change
-		this.undo();
+		this.undo(client);
 		break;
 
 	    case "guess":
 		// if our last guess was incorrect, increase the guesses remaining
 		if (!this.words.unguessLetter(lastState.data1, lastState.data2)) {
-		    ++guessesRemaining;
+		    ++this.guessesRemaining;
 		    // emit set-num-guesses event
-		    this.emitSetNumGuesses();
+		    this.emitSetNumGuesses(client);
+		}
+		else { // update the display
+		    this.emitDisplayProgress(client);
 		}
 		break;
 	}
     };
 
-    this.emitDisplayProgress = function() {
-	if (this.client) {
-	    this.client.emit('display-progress', this.words.getProgressDisplay());
+    this.emitDisplayProgress = function(client) {
+	if (client) {
+	    console.log("progress-display: " + this.words.getProgressDisplay());
+	    client.emit('display-progress', { progress: this.words.getProgressDisplay() });
 	}
     };
 
-    this.emitSetNumGuesses = function() {
-	if (this.client) {
-	    this.client.emit('set-num-guesses', this.guessesRemaining);
+    this.emitSetNumGuesses = function(client) {
+	if (client) {
+	    client.emit('set-num-guesses', 
+                { numGuesses: "Remaining guesses: " + this.guessesRemaining });
+	}
+    };
+
+    this.emitShowAlert = function(client, msg) {
+	if (client) {
+	    client.emit('show-alert', { message: msg } );
 	}
     };
 }

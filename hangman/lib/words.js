@@ -64,23 +64,28 @@ function Words() {
 	}
 
 	var index = this.isFirstWord? 0: Math.floor(Math.random() * this.dictionary.length);
-	console.log("getRandomWord: " + this.dictionary[index]);
+	var newWord = this.dictionary[index];
+	console.log("getNewWord: " + newWord);
 
 	// remove word from dictionary
 	this.dictionary.splice(index, 1);
 
 	console.log("dictionary: " + this.dictionary);
 
-        this.progress = initializeProgress(this.dictionary[index]);
+        this.progress = initializeProgress(newWord);
 	this.isFirstWord = false;
-	return this.dictionary[index];
+	this.currentWord = newWord;
+
+	return newWord;
     };
 
     // use when undo makes us put back a word we were working on
     // restores the dictionary; returns true if we're back to the beginning
-    this.restoreWord = function(word) {
+    this.restoreWord = function(word, lastWord) {
 	// if it is our first word, let the caller know we're back to the beginning
 	// and make sure word is added at the start of the array
+        this.currentWord = lastWord;
+	this.progress = lastWord; // set up for unguessLetter
 	if (word == masterDictionary[0]) {
 	    this.dictionary.unshift(word);
 	    this.isFirstWord = true;
@@ -99,14 +104,19 @@ function Words() {
 
 	// search for letter matches in word
 	var foundLetter = false;
+	var newProgress = "";
 	for (var i = 0; i < this.currentWord.length; ++i) {
 	    // if find the letter in the word, replace blank; otherwise keep current progress
             if (this.currentWord[i] == letter &&
 		this.progress[i] == blank) {
-		this.progress[i] = letter;
+		newProgress += letter;
 		foundLetter = true;
 	    }
+	    else {
+		newProgress += this.progress[i];
+	    }
 	}
+	this.progress = newProgress;
 	return foundLetter;
     };
 
@@ -115,14 +125,23 @@ function Words() {
 
 	// search for letter matches in progress
 	var unfoundLetter = false;
+        var newProgress   = "";
 	for (var i = 0; i < this.progress.length; ++i) {
 	    // if find the letter in the word, replace blank; otherwise keep current progress
             if (this.progress[i] == letter) {
-		this.progress[i] = blank;
+		newProgress += blank;
 		unfoundLetter = true;
 	    }
+	    else {
+		newProgress += this.progress[i];
+	    }
 	}
+	this.progress = newProgress;
 	return unfoundLetter;
+    };
+
+    this.hasSolvedWord = function() {
+        return (this.progress == this.currentWord);
     };
 
     // returns a pretty-print version of the progress string

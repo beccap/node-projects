@@ -41,7 +41,7 @@ function GamePlay() {
 	    this.emitDisplayProgress(client);
 	    if (this.words.hasSolvedWord()) {
 		this.emitShowAlert(client, "You've guessed the word!");
-		this.state.logSolved(client, this.workingWord);
+		this.state.logSolved(client, this.workingWord, this.guessesRemaining);
 		this.startNewWord(client);
 	    }
 	}
@@ -54,7 +54,7 @@ function GamePlay() {
 
 	    if (this.guessesRemaining <= 0) {
 		this.emitShowAlert(client, "All out of guesses! The word was: " + this.workingWord);
-		this.state.logOutOfGuesses(client, this.workingWord);
+		this.state.logOutOfGuesses(client, this.words.progress, this.guessesRemaining);
 		this.startNewWord(client);
 	    }
 	    else {
@@ -67,6 +67,10 @@ function GamePlay() {
     this.undo = function(client) {
 
 	var lastState = this.state.undo(client);
+
+	if (!lastState) {
+	    return;
+	}
 	console.log("undoing lastState: " + lastState.action);
 
 	switch (lastState.action) {
@@ -78,8 +82,18 @@ function GamePlay() {
 		// emit display-progress event
 		this.emitDisplayProgress(client);
 
+		// also undo the change immediately before it since this is not a user-change
+		this.undo(client);
+		break;
+
 	    case "outofguesses":
 	    case "solved":
+		// restore progress
+		this.words.progress = lastState.data1;
+		this.guessesRemaining = lastState.data2;
+		this.emitSetNumGuesses(client);
+		this.emitDisplayProgress(client);
+
 		// also undo the change immediately before it since this is not a user-change
 		this.undo(client);
 		break;
@@ -100,7 +114,6 @@ function GamePlay() {
 
     this.emitDisplayProgress = function(client) {
 	if (client) {
-	    console.log("progress-display: " + this.words.getProgressDisplay());
 	    client.emit('display-progress', { progress: this.words.getProgressDisplay() });
 	}
     };

@@ -85,7 +85,6 @@ function Words() {
 	// if it is our first word, let the caller know we're back to the beginning
 	// and make sure word is added at the start of the array
         this.currentWord = lastWord;
-	this.progress = lastWord; // set up for unguessLetter
 	if (word == masterDictionary[0]) {
 	    this.dictionary.unshift(word);
 	    this.isFirstWord = true;

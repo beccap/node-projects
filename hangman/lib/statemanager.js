@@ -15,12 +15,12 @@ function StateManager() {
 	addState(this, client, "newword", word, oldWord);
     };
 
-    this.logOutOfGuesses = function(client, word) {
-	addState(this, client, "outofguesses", word);
+    this.logOutOfGuesses = function(client, progress, numGuesses) {
+	addState(this, client, "outofguesses", progress, numGuesses);
     };
 
-    this.logSolved = function(client, word) {
-	addState(this, client, "solved", word);
+    this.logSolved = function(client, word, numGuesses) {
+	addState(this, client, "solved", word, numGuesses);
     };
 
     this.initializeSession = function(client, session, start) {
@@ -45,9 +45,7 @@ function StateManager() {
 
     // update the state on undo
     this.undo = function(client) {
-	var state = removeState(this, client);
-	console.log("removing state: " + state);
-	return state;
+	return removeState(this, client);
     };
 
     // are we at the beginning?
@@ -69,7 +67,6 @@ function StateManager() {
 
     this.emitUpdateQuery = function(client) {
 	if (client) {
-            console.log("emitting state query: " + this.createStateQuery());
 	    client.emit('update-query', { query: this.createStateQuery() });
 	}
     }

@@ -1,1 +1,61 @@
-<h1>Hangman App</h1>
+<!doctype html>
+<html>
+<script src="/socket.io/socket.io.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+<script>
+    var socket = io();
+    $(document).ready(function() {
+
+        $('#send').click(function() {
+            socket.emit('guess', $('#letter').val());
+            $('#letter').val(''); // clear letter value
+            return false;
+        });
+
+        $('#undo').click(function() {
+            socket.emit('undo');
+            return false;
+        });
+
+        socket.on('display-progress', function(data) {
+            $("#displayprogress").text(data.progress);
+        });
+
+        socket.on('set-num-guesses', function(data) {
+            $("#numguesses").text(data.numGuesses);
+        });
+
+        socket.on('update-query', function(data) {
+            if (window.history.pushState) {
+                var newurl = window.location.origin + window.location.pathname + data.query;
+                window.history.pushState({ path: newurl }, '', newurl);
+            }
+        });
+
+        socket.on('show-alert', function(data) {
+            alert(data.message);
+        });
+
+    });
+</script>
+
+<head>
+    <title>Hangman</title>
+</head>
+
+<body>
+    <h3>Hangman</h1>
+
+    <h2 id="displayprogress"></h3>
+
+    <p id="numguesses"></p>
+
+    <form action="">
+         Enter letter:<br>
+         <input id="letter" type="text" name="letter" maxlength="1"><br><br>
+         <input id="send" type="button" value="Send">
+         <input id="undo" type="button" value="Undo">
+    </form>
+</body>
+</html>
+
